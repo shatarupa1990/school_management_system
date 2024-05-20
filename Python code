@@ -1,0 +1,360 @@
+import mysql.connector
+import hashlib
+
+def get_db_connection():
+    connection = mysql.connector.connect(
+        host='localhost',
+        user='root',
+        password='sili1990',
+        database='school_management_system'
+    )
+    return connection
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def register_user(username, password, role):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    hashed_password = hash_password(password)
+    cursor.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", (username, hashed_password, role))
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+def login_user(username, password):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    hashed_password = hash_password(password)
+    cursor.execute("SELECT role FROM users WHERE username = %s AND password = %s", (username, hashed_password))
+    user = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    return user[0] if user else None
+
+def forgot_password(username, new_password):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    hashed_password = hash_password(new_password)
+    cursor.execute("UPDATE users SET password = %s WHERE username = %s", (hashed_password, username))
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+def redirect_to_dashboard(role):
+    if role == 'admin':
+        return admin_dashboard()
+    elif role in ['staff', 'student']:
+        return user_dashboard(role)
+    elif role == 'parent':
+        return parent_dashboard()
+    else:
+        return "Access Denied"
+
+def admin_dashboard():
+    return {
+        "home": "Welcome to the Admin Dashboard",
+        "about_us": "Information about our webpage",
+        "contact_us": {
+            "email": "admin@example.com",
+            "phone": "123-456-7890"
+        },
+        "attendance_records": read_attendance_records(),
+        "reviews": "Reviews section",
+        "query": "Query section"
+    }
+
+def user_dashboard(role):
+    return {
+        "home": f"Welcome to the {role.capitalize()} Dashboard",
+        "about_us": "Information about our webpage",
+        "contact_us": {
+            "email": f"{role}@example.com",
+            "phone": "123-456-7890"
+        },
+        "attendance_records": read_attendance_records() if role in ['staff', 'student'] else "Access Denied",
+        "reviews": "Reviews section",
+        "query": "Query section"
+    }
+
+def get_top_rated_institutions(type, sort_by="rating", filter_by=None):
+    return read_institutions(type, sort_by, filter_by)
+
+def parent_dashboard():
+    top_schools = get_top_rated_institutions('school')
+    top_colleges = get_top_rated_institutions('college')
+    top_universities = get_top_rated_institutions('university')
+
+    return {
+        "home": {
+            "welcome_message": "Welcome to the Parent Dashboard",
+            "top_schools": top_schools,
+            "top_colleges": top_colleges,
+            "top_universities": top_universities
+        },
+        "schools": "Information about schools",
+        "colleges": "Information about colleges",
+        "university": "Information about universities",
+        "awards_certifications": "Details of awards and certifications",
+        "reviews_ratings": "Reviews and ratings section",
+        "contact_us": {
+            "email": "parent@example.com",
+            "phone": "123-456-7890"
+        },
+        "career": "Career opportunities",
+        "support": "Support section"
+    }
+
+def handle_parent_dashboard(dashboard):
+    print("Welcome to the Parent Dashboard")
+    print("Top Rated Schools:")
+    for school in dashboard["home"]["top_schools"]:
+        print(school)
+
+    print("Top Rated Colleges:")
+    for college in dashboard["home"]["top_colleges"]:
+        print(college)
+
+    print("Top Rated Universities:")
+    for university in dashboard["home"]["top_universities"]:
+        print(university)
+
+    # Enquiry form
+    print("Do you want to make an enquiry? (yes/no)")
+    choice = input().lower()
+    if choice == 'yes':
+        name = input("Enter your name: ")
+        email = input("Enter your email: ")
+        phone = input("Enter your phone: ")
+        message = input("Enter your message: ")
+        institution_id = input("Enter the institution ID you are enquiring about: ")
+        create_enquiry(name, email, phone, message, institution_id)
+        print("Enquiry submitted successfully")
+
+def main():
+    while True:
+        print("1. Admin Login\n2. Staff/Student/Parent Register\n3. Staff/Student/Parent Login\n4. Forgot Password\n5. Exit")
+        choice = input("Enter your choice: ")
+
+        if choice == '1':
+            username = input("Enter username: ")
+            password = input("Enter password: ")
+            role = login_user(username, password)
+            if role == 'admin':
+                print(redirect_to_dashboard(role))
+            else:
+                print("Invalid admin credentials")
+        
+        elif choice == '2':
+            username = input("Enter username: ")
+            password = input("Enter password: ")
+            role = input("Enter role (staff/student/parent): ")
+            register_user(username, password, role)
+            print("Registration successful")
+
+        elif choice == '3':
+            username = input("Enter username: ")
+            password = input("Enter password: ")
+            role = login_user(username, password)
+            if role in ['staff', 'student', 'parent']:
+                dashboard = redirect_to_dashboard(role)
+                print(dashboard)
+                if role == 'parent':
+                    handle_parent_dashboard(dashboard)
+            else:
+                print("Invalid credentials")
+
+        elif choice == '4':
+            username = input("Enter username: ")
+            new_password = input("Enter new password: ")
+            forgot_password(username, new_password)
+            print("Password reset successful")
+
+        elif choice == '5':
+            break
+
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
+import mysql.connector
+import hashlib
+
+def get_db_connection():
+    connection = mysql.connector.connect(
+        host='localhost',
+        user='root',
+        password='sili1990',
+        database='school_management_system'
+    )
+    return connection
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def register_user(username, password, role):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    hashed_password = hash_password(password)
+    cursor.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", (username, hashed_password, role))
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+def login_user(username, password):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    hashed_password = hash_password(password)
+    cursor.execute("SELECT role FROM users WHERE username = %s AND password = %s", (username, hashed_password))
+    user = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    return user[0] if user else None
+
+def forgot_password(username, new_password):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    hashed_password = hash_password(new_password)
+    cursor.execute("UPDATE users SET password = %s WHERE username = %s", (hashed_password, username))
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+def redirect_to_dashboard(role):
+    if role == 'admin':
+        return admin_dashboard()
+    elif role in ['staff', 'student']:
+        return user_dashboard(role)
+    elif role == 'parent':
+        return parent_dashboard()
+    else:
+        return "Access Denied"
+
+def admin_dashboard():
+    return {
+        "home": "Welcome to the Admin Dashboard",
+        "about_us": "Information about our webpage",
+        "contact_us": {
+            "email": "admin@example.com",
+            "phone": "123-456-7890"
+        },
+        "attendance_records": read_attendance_records(),
+        "reviews": "Reviews section",
+        "query": "Query section"
+    }
+
+def user_dashboard(role):
+    return {
+        "home": f"Welcome to the {role.capitalize()} Dashboard",
+        "about_us": "Information about our webpage",
+        "contact_us": {
+            "email": f"{role}@example.com",
+            "phone": "123-456-7890"
+        },
+        "attendance_records": read_attendance_records() if role in ['staff', 'student'] else "Access Denied",
+        "reviews": "Reviews section",
+        "query": "Query section"
+    }
+
+def get_top_rated_institutions(type, sort_by="rating", filter_by=None):
+    return read_institutions(type, sort_by, filter_by)
+
+def parent_dashboard():
+    top_schools = get_top_rated_institutions('school')
+    top_colleges = get_top_rated_institutions('college')
+    top_universities = get_top_rated_institutions('university')
+
+    return {
+        "home": {
+            "welcome_message": "Welcome to the Parent Dashboard",
+            "top_schools": top_schools,
+            "top_colleges": top_colleges,
+            "top_universities": top_universities
+        },
+        "schools": "Information about schools",
+        "colleges": "Information about colleges",
+        "university": "Information about universities",
+        "awards_certifications": "Details of awards and certifications",
+        "reviews_ratings": "Reviews and ratings section",
+        "contact_us": {
+            "email": "parent@example.com",
+            "phone": "123-456-7890"
+        },
+        "career": "Career opportunities",
+        "support": "Support section"
+    }
+
+def handle_parent_dashboard(dashboard):
+    print("Welcome to the Parent Dashboard")
+    print("Top Rated Schools:")
+    for school in dashboard["home"]["top_schools"]:
+        print(school)
+
+    print("Top Rated Colleges:")
+    for college in dashboard["home"]["top_colleges"]:
+        print(college)
+
+    print("Top Rated Universities:")
+    for university in dashboard["home"]["top_universities"]:
+        print(university)
+
+    # Enquiry form
+    print("Do you want to make an enquiry? (yes/no)")
+    choice = input().lower()
+    if choice == 'yes':
+        name = input("Enter your name: ")
+        email = input("Enter your email: ")
+        phone = input("Enter your phone: ")
+        message = input("Enter your message: ")
+        institution_id = input("Enter the institution ID you are enquiring about: ")
+        create_enquiry(name, email, phone, message, institution_id)
+        print("Enquiry submitted successfully")
+
+def main():
+    while True:
+        print("1. Admin Login\n2. Staff/Student/Parent Register\n3. Staff/Student/Parent Login\n4. Forgot Password\n5. Exit")
+        choice = input("Enter your choice: ")
+
+        if choice == '1':
+            username = input("Enter username: ")
+            password = input("Enter password: ")
+            role = login_user(username, password)
+            if role == 'admin':
+                print(redirect_to_dashboard(role))
+            else:
+                print("Invalid admin credentials")
+        
+        elif choice == '2':
+            username = input("Enter username: ")
+            password = input("Enter password: ")
+            role = input("Enter role (staff/student/parent): ")
+            register_user(username, password, role)
+            print("Registration successful")
+
+        elif choice == '3':
+            username = input("Enter username: ")
+            password = input("Enter password: ")
+            role = login_user(username, password)
+            if role in ['staff', 'student', 'parent']:
+                dashboard = redirect_to_dashboard(role)
+                print(dashboard)
+                if role == 'parent':
+                    handle_parent_dashboard(dashboard)
+            else:
+                print("Invalid credentials")
+
+        elif choice == '4':
+            username = input("Enter username: ")
+            new_password = input("Enter new password: ")
+            forgot_password(username, new_password)
+            print("Password reset successful")
+
+        elif choice == '5':
+            break
+
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
